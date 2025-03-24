@@ -6,6 +6,8 @@ Serwer msgget
 Serwer socket unix
 Serwer socket datagram
 
+.
+
 
 https://drive.google.com/drive/folders/1zdIB9nNEZfz6RyrxIA28Gx3O8G9bRtOu?fbclid=IwZXh0bgNhZW0CMTAAAR018NnyXX4KnBuQqoPZMVHLP8QoMyy0gM1l2yFjyVg7gXdTaD1kanB9aNQ_aem_jyOYxA8aV0eM2XLnW-wqQw
 
