@@ -2,23 +2,43 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
 
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s <message>\n", argv[0]);
-        return 1;
-    }
+#define FIFO_TO_SERVER "/tmp/fifo_to_server"
+#define FIFO_TO_CLIENT "/tmp/fifo_to_client"
 
-    int file = open("fifo", O_WRONLY);
-    if (file == -1) {
-        perror("open");
-        return 1;
-    }
+int main() {
+    double number;
+    char message[512];
+    char result[600]; // większy bufor na wynik
 
-    if (write(file, argv[1], 50) == -1) {
-        perror("write");
-    }
+    // Pobranie danych od użytkownika
+    printf("Podaj liczbe: ");
+    scanf("%lf", &number);
+    printf("Podaj napis: ");
+    scanf(" %[^\n]", message); // czytanie całej linii ze spacjami
+
+    // Otwieranie FIFO
+    int toServer = open(FIFO_TO_SERVER, O_WRONLY);
+    int toClient = open(FIFO_TO_CLIENT, O_RDONLY);
     
-    close(file);
+    if (toServer == -1 || toClient == -1) {
+        perror("Blad otwarcia FIFO");
+        return 1;
+    }
+
+    // Wysyłanie danych do serwera
+    write(toServer, &number, sizeof(double));
+    write(toServer, message, 512);
+
+    // Odczyt odpowiedzi od serwera
+    read(toClient, result, 600);
+
+    printf("Odpowiedz serwera: %s\n", result);
+
+    // Zamknięcie kolejki
+    close(toServer);
+    close(toClient);
+
     return 0;
 }

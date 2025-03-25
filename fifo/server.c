@@ -1,46 +1,50 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <string.h>
 
-int file;
-
-void signalHandler(int sig) {
-    printf("Server stopping...\n");
-    close(file);
-    unlink("fifo");  // Usunięcie FIFO po zamknięciu
-    exit(0);
-}
+#define FIFO_TO_SERVER "/tmp/fifo_to_server"
+#define FIFO_TO_CLIENT "/tmp/fifo_to_client"
 
 int main() {
-    signal(SIGINT, signalHandler);
+    double number;
+    char message[512];
+    char response[600];
 
-    if (mkfifo("fifo", 0600) == -1) {
-        perror("mkfifo");
+    // Tworzenie kolejek FIFO, jeśli nie istnieją
+    mkfifo(FIFO_TO_SERVER, 0600);
+    mkfifo(FIFO_TO_CLIENT, 0600);
+
+    // Otwieranie FIFO
+    int toServer = open(FIFO_TO_SERVER, O_RDONLY);
+    int toClient = open(FIFO_TO_CLIENT, O_WRONLY);
+
+    if (toServer == -1 || toClient == -1) {
+        perror("Blad otwarcia FIFO");
         return 1;
     }
 
-    char fromClient[50];
-
     while (1) {
-        file = open("fifo", O_RDONLY);
-        if (file == -1) {
-            perror("open");
-            return 1;
-        }
+        // Odczyt danych od klienta
+        read(toServer, &number, sizeof(double));
+        read(toServer, message, 512);
 
-        if (read(file, fromClient, 50) == -1) {
-            perror("read");
-        } else {
-            printf("From client: %s\n", fromClient);
-        }
+        // Tworzenie odpowiedzi w formacie "napis liczba"
+        snprintf(response, sizeof(response), "%s %.2lf", message, number);
 
-        close(file);
-        sleep(1);
+        // Odesłanie wyniku do klienta
+        write(toClient, response, strlen(response) + 1);
+
+        printf("Serwer wyslal: %s\n", response);
     }
+
+    // Zamknięcie kolejki (teoretycznie nigdy nie nastąpi)
+    close(toServer);
+    close(toClient);
+    unlink(FIFO_TO_SERVER);
+    unlink(FIFO_TO_CLIENT);
 
     return 0;
 }
