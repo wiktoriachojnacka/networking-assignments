@@ -41,3 +41,5 @@ ls -l fifo
 # The FIFO file should be removed automatically when the program stops.
 # If it persists, manually remove it:
 rm fifo
+
+## 2. Queue
