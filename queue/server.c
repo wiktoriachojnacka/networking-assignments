@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <math.h>
 #include <signal.h>
 #include <sys/msg.h>
 #include <sys/ipc.h>
-#include <math.h>
 #include <unistd.h>
 
 #define PATH "/tmp/ipc_wiki"
@@ -22,7 +23,7 @@ struct response {
 };
 
 void cleanup(int sig) {
-    printf("\nZatrzymanie serwera. Usuwanie kolejek...\n");
+    printf("\nUsuwanie kolejek...\n");
     msgctl(q_req, IPC_RMID, NULL);
     msgctl(q_res, IPC_RMID, NULL);
     exit(0);
@@ -47,34 +48,52 @@ int main() {
         exit(1);
     }
 
-    struct request req;
-    struct response res;
+    printf("Serwer uruchomiony. Oczekiwanie na zapytania...\n");
 
-    printf("Serwer uruchomiony...\n");
+    long active_client = 0;
 
     while (1) {
-        if (msgrcv(q_req, &req, sizeof(req) - sizeof(long), 0, 0) == -1) {
-            perror("msgrcv");
-            continue;
+        struct request req;
+        struct response res;
+
+        // Odbieranie pierwszego zapytania (float + long)
+        if (msgrcv(q_req, &req, sizeof(req) - sizeof(long), 0, IPC_NOWAIT) != -1) {
+            // Jeśli nie ma aktywnej sesji — przyjmij nowego klienta
+            if (active_client == 0) {
+                active_client = req.type;
+                float sinval = sinf(req.val);
+                float result = powf(sinval, req.pow);
+
+                res.type = req.type;
+                res.result = result;
+
+                printf("Obliczono sin(%.2f)^%ld = %.4f\n", req.val, req.pow, result);
+
+                if (msgsnd(q_res, &res, sizeof(res.result), 0) == -1) {
+                    perror("msgsnd");
+                }
+            } else if (req.type != active_client) {
+                // Ktoś inny próbuje się wbić — ignorujemy
+                printf("Ignoruję klienta [PID=%ld], trwa sesja z klientem [PID=%ld]\n", req.type, active_client);
+            }
         }
 
-        printf("Odebrano od klienta [%ld]: float=%.2f, long=%ld\n", req.type, req.val, req.pow);
-
-        res.type = req.type;
-        res.result = powf(sinf(req.val), req.pow);
-
-        if (msgsnd(q_res, &res, sizeof(res.result), 0) == -1) {
-            perror("msgsnd");
-            continue;
+        // Odbieranie zaktualizowanych wyników tylko od aktywnego klienta
+        while (msgrcv(q_req, &res, sizeof(res.result), 0, IPC_NOWAIT) != -1) {
+            if (res.type == active_client) {
+                if (res.result == -1.0f) {
+                    printf("Zamykam sesję klienta [PID=%ld]\n", active_client);
+                    active_client = 0;
+                } else {
+                    printf("Odebrano od klienta [PID=%ld] nowy wynik: %.4f\n", res.type, res.result);
+                }
+            } else {
+                // ignorujemy innych klientów
+                printf("Ignoruję wynik od klienta [PID=%ld] — trwa sesja z [PID=%ld]\n", res.type, active_client);
+            }
         }
 
-        // Czekamy na odpowiedź od klienta
-        if (msgrcv(q_req, &res, sizeof(res.result), req.type, 0) == -1) {
-            perror("msgrcv");
-            continue;
-        }
-
-        printf("Zaktualizowany wynik od klienta [%ld]: %.4f\n", res.type, res.result);
+        usleep(100000); // 0.1 sekundy oddechu
     }
 
     return 0;
