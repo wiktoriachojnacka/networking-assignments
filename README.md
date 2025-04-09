@@ -34,10 +34,12 @@ ls -l fifo
 # Run the Server (in one terminal window)
 ./server
 
-# Run the Client (in another terminal window, passing a message as an argument)
-./client "Your message"
+# Run the Client (in another terminal window, passing argumentS)
+./client 
 
 # Cleanup (If Needed)
 # The FIFO file should be removed automatically when the program stops.
 # If it persists, manually remove it:
 rm fifo
+
+## 2. Queue

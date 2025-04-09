@@ -11,18 +11,8 @@ int main() {
     double number;
     char message[512];
     char result[600]; // większy bufor na wynik
-<<<<<<< HEAD
-
-    // Pobranie danych od użytkownika
-    printf("Podaj liczbe: ");
-    scanf("%lf", &number);
-    printf("Podaj napis: ");
-    scanf(" %[^\n]", message); // czytanie całej linii ze spacjami
-
-=======
     char cont;
 
->>>>>>> queue-update
     // Otwieranie FIFO
     int toServer = open(FIFO_TO_SERVER, O_WRONLY);
     int toClient = open(FIFO_TO_CLIENT, O_RDONLY);
@@ -32,16 +22,6 @@ int main() {
         return 1;
     }
 
-<<<<<<< HEAD
-    // Wysyłanie danych do serwera
-    write(toServer, &number, sizeof(double));
-    write(toServer, message, 512);
-
-    // Odczyt odpowiedzi od serwera
-    read(toClient, result, 600);
-
-    printf("Odpowiedz serwera: %s\n", result);
-=======
     do {
         // Pobranie danych od użytkownika
         printf("Podaj liczbe: ");
@@ -63,7 +43,6 @@ int main() {
         scanf(" %c", &cont);
 
     } while (cont == 't' || cont == 'T');
->>>>>>> queue-update
 
     // Zamknięcie kolejki
     close(toServer);
