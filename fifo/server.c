@@ -11,7 +11,13 @@
 int main() {
     double number;
     char message[512];
+<<<<<<< HEAD
     char response[600];
+=======
+    char response[1024];      // pełna odpowiedź
+    char temp[600];           // pojedynczy kawałek
+    response[0] = '\0';       // inicjalizacja pustym stringiem
+>>>>>>> queue-update
 
     // Tworzenie kolejek FIFO, jeśli nie istnieją
     mkfifo(FIFO_TO_SERVER, 0600);
@@ -28,6 +34,7 @@ int main() {
 
     while (1) {
         // Odczyt danych od klienta
+<<<<<<< HEAD
         read(toServer, &number, sizeof(double));
         read(toServer, message, 512);
 
@@ -35,12 +42,28 @@ int main() {
         snprintf(response, sizeof(response), "%s %.2lf", message, number);
 
         // Odesłanie wyniku do klienta
+=======
+        ssize_t read_bytes = read(toServer, &number, sizeof(double));
+        if (read_bytes <= 0) break; // klient zakończył
+
+        read(toServer, message, 512);
+
+        // Doklej nową część do odpowiedzi
+        snprintf(temp, sizeof(temp), "%.2lf %s ", number, message);
+        strncat(response, temp, sizeof(response) - strlen(response) - 1);
+
+        // Odesłanie zaktualizowanej odpowiedzi do klienta
+>>>>>>> queue-update
         write(toClient, response, strlen(response) + 1);
 
         printf("Serwer wyslal: %s\n", response);
     }
 
+<<<<<<< HEAD
     // Zamknięcie kolejki (teoretycznie nigdy nie nastąpi)
+=======
+    // Zamknięcie kolejki
+>>>>>>> queue-update
     close(toServer);
     close(toClient);
     unlink(FIFO_TO_SERVER);
