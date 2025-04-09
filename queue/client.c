@@ -49,27 +49,41 @@ int main() {
         exit(1);
     }
 
-// Odbierz wynik sin(val)^pow
-if (msgrcv(q_res, &res, sizeof(res.result), req.type, 0) == -1) {
-    perror("msgrcv");
-    exit(1);
-}
+    if (msgrcv(q_res, &res, sizeof(res.result), req.type, 0) == -1) {
+        perror("msgrcv");
+        exit(1);
+    }
 
-printf("Odebrano od serwera: %.4f\n", res.result);
+    printf("Odebrano od serwera: %.4f\n", res.result);
 
-// Użytkownik sam wpisuje liczbę do dodania
-float additional;
-printf("Podaj liczbę do dodania: ");
-scanf("%f", &additional);
-res.result += additional;
+    while (1) {
+        float additional;
+        char cont;
 
-// Odeślij zaktualizowany wynik
-if (msgsnd(q_req, &res, sizeof(res.result), 0) == -1) {
-    perror("msgsnd");
-    exit(1);
-}
+        printf("Podaj liczbę do dodania: ");
+        scanf("%f", &additional);
+        res.result += additional;
 
-printf("Odesłano do serwera zaktualizowany wynik: %.4f\n", res.result);
+        if (msgsnd(q_req, &res, sizeof(res.result), 0) == -1) {
+            perror("msgsnd");
+            exit(1);
+        }
+
+        printf("Odesłano: %.4f\n", res.result);
+
+        printf("Kontynuować? (t/n): ");
+        scanf(" %c", &cont);
+        if (cont == 'n' || cont == 'N') {
+            // wyślij -1 jako sygnał końca sesji
+            res.result = -1.0f;
+            if (msgsnd(q_req, &res, sizeof(res.result), 0) == -1) {
+                perror("msgsnd");
+                exit(1);
+            }
+            printf("Zamykam klienta...\n");
+            break;
+        }
+    }
 
     return 0;
 }
