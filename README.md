@@ -22,8 +22,8 @@ git clone https://github.com/wiktoriachojnacka/networking-assignments.git
 cd networking-assignments/fifo
 
 # Compile the Code
-gcc server.c -o server
-gcc client.c -o client
+gcc server.c -o server -lm
+gcc client.c -o client 
 
 # Create the FIFO (Named Pipe)
 mkfifo fifo
@@ -61,7 +61,7 @@ The `queue` folder demonstrates client-server communication using System V messa
 cd networking-assignments/queue
 
 # Compile the Code
-gcc server.c -o server
+gcc server.c -o server -lm
 gcc client.c -o client
 
 # Run the Server (in one terminal window)
